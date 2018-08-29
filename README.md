@@ -1,5 +1,5 @@
 # ethereum_event_log-parser
-Native light weight implementation of log parser for ethereum event logs.
+A native light weight implementation of log collector and parser for ethereum event logs.
 
 ## how to install?
 ```
