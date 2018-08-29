@@ -1,0 +1,3 @@
+requests
+pysha3
+pandas
