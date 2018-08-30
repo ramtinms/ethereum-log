@@ -31,10 +31,10 @@ output_csv_files_path = '/ck-core-events/'
 
 
 collect_event_logs_by_contract_address(smart_contract_address,
-									   etherscan_api_key,
-									   from_block_num,
-									   to_block_num,
-									   output_csv_files_path)
+				       etherscan_api_key,
+				       from_block_num,
+				       to_block_num,
+				       output_csv_files_path)
 
 
 ```
