@@ -1,4 +1,4 @@
-# ethereum event log collector and parser
+# Ethereum event log collector and parser
 A native light-weight implementation of log collector and parser for ethereum event logs. 
 
 ## how to install?
