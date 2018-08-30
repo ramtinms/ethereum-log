@@ -1,4 +1,4 @@
-# ethereum event log collector and parser
+# Ethereum event log collector and parser
 A native light-weight implementation of log collector and parser for ethereum event logs. 
 
 ## how to install?
@@ -8,7 +8,8 @@ pip install eth_log
 
 ## how to use?
 
-Quick start
+Quick start ? Collect and process event logs for specific contract address and export them to csv files.
+This code collects event logs (using etherscan api) of blocks with `block_number` between `from_block_num` and `to_block_num`, process them based on smart contract abi (collected from etherscan), and export them to csv files. This package don't use web3.py for processing and has its own implementation for parsing logs to keep it light-weight and fast. 
 
 ```
 from eth_log.helpers.eventlog_helper import collect_event_logs_by_contract_address
@@ -30,10 +31,10 @@ output_csv_files_path = '/ck-core-events/'
 
 
 collect_event_logs_by_contract_address(smart_contract_address,
-									   etherscan_api_key,
-									   from_block_num,
-									   to_block_num,
-									   output_csv_files_path)
+				       etherscan_api_key,
+				       from_block_num,
+				       to_block_num,
+				       output_csv_files_path)
 
 
 ```
