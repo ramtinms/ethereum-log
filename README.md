@@ -8,7 +8,8 @@ pip install eth_log
 
 ## how to use?
 
-Quick start
+Quick start ? Collect and process event logs for specific contract address and export them to csv files.
+This code collects event logs (using etherscan api) of blocks with `block_number` between `from_block_num` and `to_block_num`, process them based on smart contract abi (collected from etherscan), and export them to csv files. This package don't use web3.py for processing and has its own implementation for parsing logs to keep it light-weight and fast. 
 
 ```
 from eth_log.helpers.eventlog_helper import collect_event_logs_by_contract_address
