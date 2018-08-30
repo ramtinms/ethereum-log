@@ -6,7 +6,7 @@ from eth_log.models.topic_parser import TopicParser
 
 class TestTopicParser(unittest.TestCase):
  
-    def test_log_parsing(self):
+    def test_log_parsing_uint_address(self):
         """
         parsing a log hex string
         """
@@ -51,3 +51,52 @@ class TestTopicParser(unittest.TestCase):
         self.assertEqual(res.get('payload')[3].get('name'), 'cooldownEndBlock')
         self.assertEqual(res.get('payload')[3].get('type'), 'uint256')
         self.assertEqual(res.get('payload')[3].get('value'), 6235821)
+
+    def test_log_parsing_string_and_bytes(self):
+        json_str = """
+            {
+              "anonymous": false,
+              "inputs": [
+                {
+                  "indexed": false,
+                  "name": "first",
+                  "type": "uint"
+                },
+                {
+                  "indexed": false,
+                  "name": "second",
+                  "type": "uint32[]"
+                },
+                {
+                  "indexed": false,
+                  "name": "third",
+                  "type": "bytes10"
+                },
+                {
+                  "indexed": false,
+                  "name": "forth",
+                  "type": "bytes"
+                }
+              ],
+              "name": "f",
+              "type": "event"
+            }
+             """
+        json_obj = json.loads(json_str)
+        topic = Topic.from_json(json_obj)
+        topic_parser = TopicParser(topic)
+        test_log_hex_string = "0x00000000000000000000000000000000000000000000000000000000000001230000000000000000000000000000000000000000000000000000000000000080313233343536373839300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000004560000000000000000000000000000000000000000000000000000000000000789000000000000000000000000000000000000000000000000000000000000000d48656c6c6f2c20776f726c642100000000000000000000000000000000000000"
+        res = topic_parser.parse(test_log_hex_string)
+        self.assertEqual(res.get('payload')[0].get('name'), 'first')
+        self.assertEqual(res.get('payload')[0].get('type'), 'uint')
+        self.assertEqual(res.get('payload')[0].get('value'), 291)
+        self.assertEqual(res.get('payload')[1].get('name'), 'second')
+        self.assertEqual(res.get('payload')[1].get('type'), 'uint32[]')
+        self.assertEqual(res.get('payload')[1].get('value'), [1110, 1929])
+        self.assertEqual(res.get('payload')[2].get('name'), 'third')
+        self.assertEqual(res.get('payload')[2].get('type'), 'bytes10')
+        self.assertEqual(res.get('payload')[2].get('value'), "1234567890")
+        self.assertEqual(res.get('payload')[3].get('name'), 'forth')
+        self.assertEqual(res.get('payload')[3].get('type'), 'bytes')
+        self.assertEqual(res.get('payload')[3].get('value'), "Hello, world!")
+
