@@ -69,7 +69,7 @@ class EtherscanAPIHandler:
                 ranges += [(counter , min(counter + self.block_per_request - 1, max_block_number))]
                 counter += self.block_per_request
             return ranges
-                
+    
     def fetch_eventlogs_by_contract(self, contract_obj, min_block_number, max_block_number):
         endpoint = '/api'
         params = {

@@ -10,6 +10,7 @@ class EventLog:
                        log_index,
                        tx_hash,
                        tx_index,
+                       block_hash=None,
                        timestamp=None, 
                        gas_price=None,
                        gas_used=None):
@@ -17,6 +18,7 @@ class EventLog:
         self.topic_fingerprints = topic_fingerprints
         self.log_hex_str_data = log_hex_str_data
         self.block_number = block_number
+        self.block_hash = block_hash
         self.log_index = log_index
         self.timestamp = timestamp
         self.gas_price = gas_price
@@ -53,6 +55,10 @@ class EventLog:
         return datetime.utcfromtimestamp(int(inp, 16))
 
     @classmethod
+    def process_timestamp_google_bigquery(cls, inp):
+        return datetime.strptime(inp, "%Y-%m-%d %H:%M:%S UTC")
+
+    @classmethod
     def from_etherscan_json(cls, json_obj):
         return cls(**{'contract_address': json_obj.get('address'),
          'topic_fingerprints': json_obj.get('topics'),
@@ -64,4 +70,29 @@ class EventLog:
          'tx_hash': json_obj.get('transactionHash'),
          'tx_index': cls.process_number(json_obj.get('transactionIndex')),
          'timestamp': cls.process_timestamp(json_obj.get('timeStamp')),
+        })
+
+    @classmethod
+    def from_infura_json(cls, json_obj):
+        return cls(**{'contract_address': json_obj.get('address'),
+         'topic_fingerprints': json_obj.get('topics'),
+         'log_hex_str_data': json_obj.get('data'),
+         'block_hash': json_obj.get('blockHash'),
+         'block_number': cls.process_number(json_obj.get('blockNumber')),
+         'log_index': cls.process_number(json_obj.get('logIndex')),
+         'tx_hash': json_obj.get('transactionHash'),
+         'tx_index': cls.process_number(json_obj.get('transactionIndex'))
+        })
+        
+    @classmethod
+    def from_google_public_dataset_json(cls, json_obj):
+        return cls(**{'contract_address': json_obj.get('address'),
+         'topic_fingerprints': json_obj.get('topics'),
+         'log_hex_str_data': json_obj.get('data'),
+         'block_hash': json_obj.get('block_hash'),
+         'block_number': json_obj.get('block_number'),
+         'log_index': json_obj.get('log_index'), 
+         'tx_hash': json_obj.get('transaction_hash'),
+         'tx_index': json_obj.get('transaction_index'),
+         'timestamp': cls.process_timestamp_google_bigquery(json_obj.get('block_timestamp'))
         })
