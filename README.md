@@ -1,71 +1,75 @@
-# Ethereum event log collector and parser
-A native light-weight implementation of log collector and parser for ethereum event logs. 
+# Ethereum event log parser
+A light-weight implementation of log aggregator and parser for ethereum event logs. 
 
 ## how to install?
 ```
 pip install eth_log
 ```
 
-## how to use?
-
-Quick start ? Collect and process event logs for specific contract address and export them to csv files.
-This code collects event logs (using etherscan api) of blocks with `block_number` between `from_block_num` and `to_block_num`, process them based on smart contract abi (collected from etherscan), and export them to csv files. This package don't use web3.py for processing and has its own implementation for parsing logs to keep it light-weight and fast. 
-
-```
-from eth_log.helpers.eventlog_helper import collect_event_logs_by_contract_address
-
-# smart contract address you would like to collect logs for (e.g. CryptoKitties Core)
-smart_contract_address = '0x06012c8cf97BEaD5deAe237070F9587f8E7A266d'
-
-# your etherscan api key
-etherscan_api_key = 'YourApiKeyToken'
-
-# collect event logs from block number 
-from_block_num = 6230000
-
-# collect event logs to block number (included)
-to_block_num = 6235800
-
-# output path for csv files for events
-output_csv_files_path = '/ck-core-events/'
-
-
-collect_event_logs_by_contract_address(smart_contract_address,
-				       etherscan_api_key,
-				       from_block_num,
-				       to_block_num,
-				       output_csv_files_path)
-
-
+## How to use this?
+### Setup Contract 
+Create a contract object by passing smart contract address and contract ABI string.
+```python
+contract_address = "0x06012c8cf97bead5deae237070f9587f8e7a266d"
+contract_abi_string = "[{"constant":true,"inputs":[{"name":"_interfaceID","type":"bytes4"}], ... "
+contract = Contract(contract_address, contract_abi_string)
 ```
 
-You can instead use components individually... 
+#### what if I don't have ABI ?
+You might be able to collect it from etherscan, for which this package provides a handler for etherscan API.
+```python
+from eth_log.handlers.etherscan_api_handler import EtherscanAPIHandler
 
-```
-import eth_log
-from eth_log.models.contract import Contract
-from eth_log.models.eventlog import EventLog
-
-# making contract ready to detect topics of this smart contract and 
-# be able to process evenlogs
-contract = Contract(<contract_address>, <contract_abi_string>)
-
-# create an eventlog
-event_log = EventLog(<contract_address>,
-	                 <topic_fingerprints>,
-	                 <log_hex_str_data>,
-	                 <block_number>,
-	                 <log_index>,
-	                 <tx_hash>,
-	                 <tx_index>)
-
-# add to to the contract to be processed
-contract.add_eventlog(event_log)
-
-# check processed eventlogs
-contract.eventlogs
-
-
+handler = EtherscanAPIHandler('YourApiKeyToken')
+contract_abi_string = handler.fetch_contract_abi_string(contract_address)
+contract = Contract(contract_address, contract_abi_string)
 ```
 
-Check out `eth_log/example.py`. This will give you better understanding on how to use this package to collect and process event logs for an smart contract.
+### Get topics
+After creating the contract object you can ask for list of topics, you can also pick a topic by name of Event.
+```python
+# When you have contract you can get a list of topics 
+for topic in contract.get_topics():
+    print(topic.fingerprint, topic.description)
+    
+birth_topic = contract.get_topic_by_event_name('Birth')
+```
+
+### Collect event logs for specific topic
+This package provides different handlers to collect log events, you can ether use Etherscan API or Infura API or google Bigquery API.
+```python
+bq_hander = GoogleBigqueryHandler()
+min_block_number = 6230000
+max_block_number = 6235800
+eventlogs = bq_hander.fetch_eventlogs_by_topic(contract_address, birth_topic,
+                                               min_block_number=min_block_number,
+                                               max_block_number=max_block_number,
+                                               parsing=True)
+```
+This will fetch logs from google bigquery and apply log parser (birth topic) to the logs. 
+
+instead of block range you can also use timestamp 
+```python
+from datetime import datetime 
+
+min_block_timestamp = datetime(2018, 9, 28)
+max_block_timestamp = datetime(2018, 9, 29)
+
+eventlogs = bq_hander.fetch_eventlogs_by_topic(contract_address, birth_topic,
+                                               min_block_timestamp=min_block_timestamp,
+                                               max_block_timestamp=max_block_timestamp,
+                                               parsing=True)
+print(len(eventlogs))
+print(eventlogs[0])
+```
+
+You can also convert these logs into a dataframe using ...
+```python
+# convert to pandas dataframe 
+def convert_to_dataframe(list_of_eventlogs):
+    return pd.DataFrame([evenlog.to_pandas() for evenlog in list_of_eventlogs])
+
+df = convert_to_dataframe(eventlogs)
+print(df.describe())
+print(df.dtypes)
+```
