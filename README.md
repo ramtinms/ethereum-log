@@ -1,6 +1,8 @@
 # Ethereum event log parser
 A light-weight implementation of log aggregator and parser for ethereum event logs. 
 
+[![Build Status](https://travis-ci.com/ramtinms/ethereum-log.svg?branch=master)](https://travis-ci.com/ramtinms/ethereum-log)
+
 ## how to install?
 ```
 pip install eth_log
