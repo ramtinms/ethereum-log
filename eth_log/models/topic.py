@@ -5,13 +5,13 @@ TopicProperty = namedtuple('TopicProperty', ['name', 'type'])
 
 class Topic:
     def __init__(self, event_name, ordered_topic_properties):
-        self.event_name = event_name
+        self.name = event_name
         self.properties = ordered_topic_properties
+        self.description = event_name + '(' + ', '.join([prop.name + ' ('+prop.type + ')' for prop in ordered_topic_properties]) + ')'
         self.fingerprint = self._build_finger_print(event_name, ordered_topic_properties)
 
     def _build_finger_print(self, event_name, ordered_topic_properties):
         input_string = event_name + '(' + ','.join([prop.type for prop in ordered_topic_properties]) + ')'
-        # replace unwanted spaces just in case
         input_string = input_string.replace(' ', '')
         hashfunc = sha3.keccak_256()
         hashfunc.update(bytes(input_string, 'utf-8'))
@@ -31,3 +31,4 @@ class Topic:
         for inp in json_obj.get('inputs', []):
             properties += [TopicProperty(inp.get('name'), inp.get('type'))]
         return cls(name, properties)
+

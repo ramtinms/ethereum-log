@@ -1,6 +1,7 @@
 from datetime import datetime
 import pandas as pd
 
+
 class EventLog:
 
     def __init__(self, contract_address,
@@ -29,14 +30,36 @@ class EventLog:
         self.event_name = None
         self.data = None
 
-    def get_dataframe(self):
+    def __str__(self):
+        template = "timestamp: {timestamp} \n"
+        template += "contract_address: {contract_address} \n"
+        template += "topics: {topics} \n"
+        template += "event: {event} \n"
         new_dict = {}
         for key, value in self.__dict__.items():
-            if key != 'data':
-                new_dict[key] = value
-            else:
+            if key == 'data':
                 for item in value:
                     new_dict['data_{}'.format(item.get('name'))] = item.get('value')
+                    template += "{}: {{data_{}}}\n".format(item.get('name'), item.get('name'))
+            elif key == 'timestamp':
+                 new_dict['timestamp'] = self.timestamp.isoformat()
+            elif key == "event_name":
+                 new_dict['event'] = value
+            elif key == 'topic_fingerprints':
+                new_dict['topics'] = ', '.join(self.topic_fingerprints)
+            elif value:
+                template += "{}: {{{}}}\n".format(key, key)
+                new_dict[key] = value
+        return template.format(**new_dict)
+
+    def to_pandas(self):
+        new_dict = {}
+        for key, value in self.__dict__.items():
+            if key == 'data':
+                for item in value:
+                    new_dict['data_{}'.format(item.get('name'))] = item.get('value')
+            else:
+                new_dict[key] = value
         return pd.Series(new_dict)
 
     @classmethod
@@ -53,10 +76,6 @@ class EventLog:
         if inp.startswith('0x'):
             inp = inp[2:]
         return datetime.utcfromtimestamp(int(inp, 16))
-
-    @classmethod
-    def process_timestamp_google_bigquery(cls, inp):
-        return datetime.strptime(inp, "%Y-%m-%d %H:%M:%S UTC")
 
     @classmethod
     def from_etherscan_json(cls, json_obj):
@@ -86,13 +105,13 @@ class EventLog:
         
     @classmethod
     def from_google_public_dataset_json(cls, json_obj):
-        return cls(**{'contract_address': json_obj.get('address'),
+        return cls(**{'contract_address': str(json_obj.get('address')),
          'topic_fingerprints': json_obj.get('topics'),
          'log_hex_str_data': json_obj.get('data'),
          'block_hash': json_obj.get('block_hash'),
-         'block_number': json_obj.get('block_number'),
-         'log_index': json_obj.get('log_index'), 
+         'block_number': int(json_obj.get('block_number')),
+         'log_index': int(json_obj.get('log_index')), 
          'tx_hash': json_obj.get('transaction_hash'),
-         'tx_index': json_obj.get('transaction_index'),
-         'timestamp': cls.process_timestamp_google_bigquery(json_obj.get('block_timestamp'))
+         'tx_index': int(json_obj.get('transaction_index')),
+         'timestamp': json_obj.get('block_timestamp')
         })

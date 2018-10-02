@@ -4,7 +4,7 @@ from requests.packages.urllib3.util.retry import Retry
 import urllib.parse
 from eth_log.models.eventlog import EventLog
 
-DEFAULT_HOST = 'https://api.etherscan.io'
+ETHERSCAN_DEFAULT_HOST = 'https://api.etherscan.io'
 
 
 class EtherscanAPIHandler:
@@ -13,7 +13,7 @@ class EtherscanAPIHandler:
         self._session = self._get_session()
         self._host = host
         if not host:
-            self._host = DEFAULT_HOST
+            self._host = ETHERSCAN_DEFAULT_HOST
         self._api_key = api_key
         self.block_per_request = block_per_request
         self.verbose = verbose
@@ -70,28 +70,28 @@ class EtherscanAPIHandler:
                 counter += self.block_per_request
             return ranges
     
-    def fetch_eventlogs_by_contract(self, contract_obj, min_block_number, max_block_number):
+    def fetch_eventlogs_by_topic(self, contract_address, topic, min_block_number, max_block_number):
         endpoint = '/api'
         params = {
             'module': 'logs',
             'action': 'getLogs',
-            'address': contract_obj.contract_address,
+            'address': contract_address,
             'apikey': self._api_key
         }
 
         for block_range in self.generate_block_ranges(min_block_number, max_block_number):
             params['fromBlock'] = block_range[0]
             params['toBlock'] = block_range[1]
-            for topic in contract_obj.topics:
-                params['topic0'] = topic
-                res = self._parse_response(self._send_request(endpoint, params))
-                if res and len(res) > 0:
-                    if self.verbose:
-                        print('{} eventlogs fetched for topic {} from block {} to block {}'.format(len(res), topic, block_range[0],block_range[1]))
-                    if len(res) == 1000:
-                        print('warning, you have exactly 1000 results in this request, you might have try to use smaller block_per_request.')
-                    for log_json_obj in res:
-                        contract_obj.add_eventlog(EventLog.from_etherscan_json(log_json_obj))
+            params['topic0'] = topic.fingerprint
+            res = self._parse_response(self._send_request(endpoint, params))
+            if res and len(res) > 0:
+                if self.verbose:
+                    print('{} eventlogs fetched for topic {} from block {} to block {}'.format(len(res), topic, block_range[0],block_range[1]))
+                if len(res) == 1000:
+                    print('warning, you have exactly 1000 results in this request, you might have try to use smaller block_per_request.')
+                if res:
+                    return [EventLog.from_etherscan_json(log_json_obj) for log_json_obj in res]
+            return None
 
     def _parse_response(self, response):
         if response.get("status", '') == "1" and response.get("message", '') == "OK":

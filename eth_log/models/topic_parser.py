@@ -1,6 +1,6 @@
 import re
 from eth_log.utils import split_by_len
-
+from eth_log.utils import validate_address
 
 class TopicParser:
 
@@ -24,7 +24,9 @@ class TopicParser:
             'bytes10': 'bytes10'
         }
 
-    def parse(self, log_hex_str):
+    def parse(self, eventlog_obj):
+        log_hex_str = eventlog_obj.log_hex_str_data
+
         if log_hex_str.startswith('0x'):
             log_hex_str = log_hex_str[2:]
 
@@ -55,12 +57,15 @@ class TopicParser:
                 return None
             log_payload += [{'name': prop.name, 'type': prop.type, 'value':value}]
 
-        return {'event': self.topic.event_name, 'payload': log_payload}
+            eventlog_obj.data = log_payload
+            eventlog_obj.event_name = self.topic.name
+        return eventlog_obj
 
     def _process_address(self, splits):
         chars_to_read = int(self.type_mappings.get('address')[4:])//self.char_byte_size
         sp = splits.pop(0)
-        address = '0x' + sp[-1*chars_to_read:]
+        address = sp[-1*chars_to_read:]
+        address = validate_address(address)
         return splits, address
 
     def _process_int(self, splits, type):
@@ -100,7 +105,6 @@ class TopicParser:
         n += 1
         if sp.startswith('0x'):
             sp = sp[2:]
-
         split_index_to_read_content = int(sp, 16) * 2 //self.pad_char_len - processed_splits - 1
         sp = splits.pop(split_index_to_read_content)
         n += 1

@@ -3,7 +3,7 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from eth_log.models.eventlog import EventLog
 
-DEFAULT_HOST = 'https://api.infura.io/v1/jsonrpc'
+INFURA_DEFAULT_HOST = 'https://api.infura.io/v1/jsonrpc'
 
 
 class InfuraAPIHandler:
@@ -12,7 +12,7 @@ class InfuraAPIHandler:
         self._session = self._get_session()
         self._host = host
         if not host:
-            self._host = DEFAULT_HOST
+            self._host = INFURA_DEFAULT_HOST
         self.block_per_request = block_per_request
         self.verbose = verbose
 
@@ -63,24 +63,24 @@ class InfuraAPIHandler:
             input_str = '0x'+ input_str
         return input_str
 
-    def fetch_eventlogs_by_contract(self, contract_obj, min_block_number, max_block_number):
+    def fetch_eventlogs_by_topic(self, contract_address, topic, min_block_number, max_block_number):
         endpoint = '/mainnet/eth_getLogs'
-        address = self.normalize_hex(contract_obj.contract_address)
+        address = self.normalize_hex(contract_address)
         for block_range in self.generate_block_ranges(min_block_number, max_block_number):
-            for topic in contract_obj.topics:
-                topic = self.normalize_hex(topic)
-                params_str = 'params=[{{"topics":["{topic}"], "address": "{address}", "fromBlock": "{from_block}", "toBlock": "{to_block}"}}]'.format(
-                    topic=topic,
-                    address=address,
-                    from_block=hex(block_range[0]),
-                    to_block=hex(block_range[1]))
-                res = self._parse_response(self._send_request(endpoint, params_str))
-                if res and len(res) > 0:
-                    # TODO fix this 
-                    if self.verbose:
-                        print('{} eventlogs fetched for topic {} from block {} to block {}'.format(len(res), topic, block_range[0],block_range[1]))
-                    for log_json_obj in res:
-                        contract_obj.add_eventlog(EventLog.from_infura_json(log_json_obj))
+            topic = self.normalize_hex(topic.fingerprint)
+            params_str = 'params=[{{"topics":["{topic}"], "address": "{address}", "fromBlock": "{from_block}", "toBlock": "{to_block}"}}]'.format(
+                topic=topic,
+                address=address,
+                from_block=hex(block_range[0]),
+                to_block=hex(block_range[1]))
+            res = self._parse_response(self._send_request(endpoint, params_str))
+            if res and len(res) > 0:
+                # TODO fix this 
+                if self.verbose:
+                    print('{} eventlogs fetched for topic {} from block {} to block {}'.format(len(res), topic, block_range[0],block_range[1]))
+            if res:
+                return [EventLog.from_etherscan_json(log_json_obj) for log_json_obj in res]
+        return None
 
     def _parse_response(self, response):
         if response.get("result"):

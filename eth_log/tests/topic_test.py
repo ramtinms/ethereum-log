@@ -40,7 +40,7 @@ class TestTopic(unittest.TestCase):
              """
         json_obj = json.loads(json_str)
         topic = Topic.from_json(json_obj)
-        self.assertEqual(topic.event_name, 'Pregnant')
+        self.assertEqual(topic.name, 'Pregnant')
         self.assertEqual(topic.properties[0].name, 'owner')
         self.assertEqual(topic.properties[0].type, 'address')
         self.assertEqual(topic.properties[3].name, 'cooldownEndBlock')

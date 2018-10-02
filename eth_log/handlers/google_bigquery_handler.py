@@ -1,6 +1,6 @@
-import json
 from google.cloud import bigquery
 from eth_log.models.eventlog import EventLog
+from eth_log.models.topic_parser import TopicParser
 
 
 class GoogleBigqueryHandler:
@@ -10,9 +10,11 @@ class GoogleBigqueryHandler:
         self.project_id = 'bigquery-public-data'
         self.dataset_id = 'ethereum_blockchain'
         self.bigquery_client = bigquery.Client()
-        # self.dataset = bigquery.Dataset(self.bigquery_client.dataset(self.dataset_id))
 
-    def fetch_event_logs(self, contract_obj, min_block_number, max_block_number):
+    def fetch_eventlogs_by_topic(self, contract_address, topic, 
+                                 parsing=False,
+                                 min_block_number=None, max_block_number=None, 
+                                 min_block_timestamp=None, max_block_timestamp=None):
         query = """
             SELECT
                 log_index,
@@ -24,33 +26,33 @@ class GoogleBigqueryHandler:
                 block_timestamp,  
                 block_number,  
                 block_hash
-            FROM `{project_id}.{dataset_id}.logs`
-                join `{project_id}.{dataset_id}.logs`
-
-            WHERE address = '{address}'
-            AND block_number >= {min_block_number}
-            AND block_number < {max_block_number}
-        """.format(address=contract_obj.contract_address,
+            FROM `{project_id}.{dataset_id}.logs` 
+            WHERE address = '{address}' 
+            AND '{topic}' in UNNEST(topics) \n
+        """.format(address=contract_address,
+                   topic=topic.fingerprint,
                    project_id=self.project_id,
-                   dataset_id=self.dataset_id,
-                   min_block_number=min_block_number,
-                   max_block_number=max_block_number)
+                   dataset_id=self.dataset_id)
+
+        if min_block_number:
+            query += 'AND block_number >= {} \n'.format(min_block_number)
+        if max_block_number:
+            query += 'AND block_number < {} \n'.format(max_block_number)
+        if min_block_timestamp:
+            query += 'AND block_timestamp >= "{}" \n'.format(min_block_timestamp.strftime("%Y-%m-%d %H:%M:%S"))
+        if max_block_timestamp:
+            query += 'AND block_timestamp < "{}" \n'.format(max_block_timestamp.strftime("%Y-%m-%d %H:%M:%S"))
 
         query_job = self.bigquery_client.query(query)
         if self.verbose:
             print('sending query to bigquery:')
             print(query)
         results = query_job.result()  # Waits for job to complete.
-        field_names = [f.name for f in query_job.schema]
-        for row in results:
-            contract_obj.add_eventlog(EventLog.from_google_public_dataset_json(zip(field_names, row)))
-
-    # def fetch_eventlogs_by_contract_from_file(self, json_dump_file, contract_obj, min_block_number, max_block_number):
-    #     with open(json_dump_file) as inp:
-    #         for line in inp:
-    #             if line:
-    #                 data = json.loads(line)
-    #                 # TODO add constraints over block numbers
-    #                 # has intersection
-    #                 if data['address'] == contract_obj.contract_address and not set(contract_obj.topics).isdisjoint(data['topics']):
-    #                     contract_obj.add_eventlog(EventLog.from_google_public_dataset_json(data))
+        if not results:
+            return []
+        field_names = [f.name for f in results.schema]
+        if parsing:
+            topic_parser = TopicParser(topic)
+            return [topic_parser.parse(EventLog.from_google_public_dataset_json(dict(zip(field_names, row)))) for row in results]
+        else:
+            return [EventLog.from_google_public_dataset_json(dict(zip(field_names, row))) for row in results] 
