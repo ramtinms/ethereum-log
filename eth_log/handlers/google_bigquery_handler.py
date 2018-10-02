@@ -1,3 +1,4 @@
+import re
 from google.cloud import bigquery
 from eth_log.models.eventlog import EventLog
 from eth_log.models.topic_parser import TopicParser
@@ -46,6 +47,7 @@ class GoogleBigqueryHandler:
         query_job = self.bigquery_client.query(query)
         if self.verbose:
             print('sending query to bigquery:')
+            query = re.sub(r'[\n]\W+|^\W+', '\n', query)
             print(query)
         results = query_job.result()  # Waits for job to complete.
         if not results:
