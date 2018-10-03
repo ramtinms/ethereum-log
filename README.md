@@ -32,7 +32,6 @@ contract = Contract(contract_address, contract_abi_string)
 ### Get topics
 After creating the contract object you can ask for list of topics, you can also pick a topic by name of Event.
 ```python
-# When you have contract you can get a list of topics 
 for topic in contract.get_topics():
     print(topic.fingerprint, topic.description)
     
