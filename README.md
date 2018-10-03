@@ -12,6 +12,8 @@ pip install eth_log
 ### Setup Contract 
 Create a contract object by passing smart contract address and contract ABI string.
 ```python
+from eth_log.models.contract import Contract
+
 contract_address = "0x06012c8cf97bead5deae237070f9587f8e7a266d"
 contract_abi_string = "[{"constant":true,"inputs":[{"name":"_interfaceID","type":"bytes4"}], ... "
 contract = Contract(contract_address, contract_abi_string)
