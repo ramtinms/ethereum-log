@@ -1,6 +1,8 @@
 # Ethereum event log parser
 A light-weight implementation of log aggregator and parser for ethereum event logs. 
 
+[![Build Status](https://travis-ci.com/ramtinms/ethereum-log.svg?branch=master)](https://travis-ci.com/ramtinms/ethereum-log)
+
 ## how to install?
 ```
 pip install eth_log
@@ -10,6 +12,8 @@ pip install eth_log
 ### Setup Contract 
 Create a contract object by passing smart contract address and contract ABI string.
 ```python
+from eth_log.models.contract import Contract
+
 contract_address = "0x06012c8cf97bead5deae237070f9587f8e7a266d"
 contract_abi_string = "[{"constant":true,"inputs":[{"name":"_interfaceID","type":"bytes4"}], ... "
 contract = Contract(contract_address, contract_abi_string)
@@ -28,7 +32,6 @@ contract = Contract(contract_address, contract_abi_string)
 ### Get topics
 After creating the contract object you can ask for list of topics, you can also pick a topic by name of Event.
 ```python
-# When you have contract you can get a list of topics 
 for topic in contract.get_topics():
     print(topic.fingerprint, topic.description)
     
@@ -38,6 +41,8 @@ birth_topic = contract.get_topic_by_event_name('Birth')
 ### Collect event logs for specific topic
 This package provides different handlers to collect log events, you can ether use Etherscan API or Infura API or google Bigquery API.
 ```python
+from eth_log.handlers.google_bigquery_handler import GoogleBigqueryHandler
+
 bq_hander = GoogleBigqueryHandler()
 min_block_number = 6230000
 max_block_number = 6235800
