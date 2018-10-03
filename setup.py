@@ -3,7 +3,7 @@ from setuptools import find_packages
 setup(
     name='eth_log',
     packages=find_packages(),
-    version='0.3.0',
+    version='0.3.2',
     description="Eth-log - python tools to collect and process ethereum smart contracts' event logs ",
     author='Ramtin Seraj',
     author_email='mehdizadeh.ramtin@gmail.com',
