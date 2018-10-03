@@ -41,6 +41,8 @@ birth_topic = contract.get_topic_by_event_name('Birth')
 ### Collect event logs for specific topic
 This package provides different handlers to collect log events, you can ether use Etherscan API or Infura API or google Bigquery API.
 ```python
+from eth_log.handlers.google_bigquery_handler import GoogleBigqueryHandler
+
 bq_hander = GoogleBigqueryHandler()
 min_block_number = 6230000
 max_block_number = 6235800
