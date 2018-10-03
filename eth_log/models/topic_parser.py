@@ -36,25 +36,36 @@ class TopicParser:
         splits = split_by_len(log_hex_str, 64)
         log_payload = []
         processed_splits = 0
+        other_topics = eventlog_obj.topic_fingerprints[1:].copy()
         for prop in self.topic.properties:
-            if prop.type == "address":
-                splits, value = self._process_address(splits)
-                processed_splits+=1
-            elif prop.type in ("int", "uint", "uint32", "uint256", "uint8"):
-                splits, value = self._process_int(splits, prop.type)
-                processed_splits+=1
-            elif prop.type in ("bytes", "string"):
-                splits, value, n = self._process_string(splits, prop.type, processed_splits)
-                processed_splits+=n
-            elif prop.type in ("uint8[]", "uint32[]", "uint256[]"):
-                splits, value, n = self._process_array(splits, prop.type, processed_splits)
-                processed_splits+=n
-            elif re.match(r"bytes[0-9]+", prop.type):
-                splits, value = self._process_bytes(splits, prop.type)
-                processed_splits+=1
+            if prop.indexed:
+                indexed_value = other_topics.pop() 
+                if prop.type == "address":
+                    _ , value = self._process_address([indexed_value])
+                elif prop.type in ("int", "uint", "uint32", "uint256", "uint8"):
+                    _ , value = self._process_int([indexed_value], prop.type)
+                else:
+                    print('Error, unsupported type {}'.format(prop.type))
+                    return None
             else:
-                print('Error, unsupported type {}'.format(prop.type))
-                return None
+                if prop.type == "address":
+                    splits, value = self._process_address(splits)
+                    processed_splits+=1
+                elif prop.type in ("int", "uint", "uint32", "uint256", "uint8"):
+                    splits, value = self._process_int(splits, prop.type)
+                    processed_splits+=1
+                elif prop.type in ("bytes", "string"):
+                    splits, value, n = self._process_string(splits, prop.type, processed_splits)
+                    processed_splits+=n
+                elif prop.type in ("uint8[]", "uint32[]", "uint256[]"):
+                    splits, value, n = self._process_array(splits, prop.type, processed_splits)
+                    processed_splits+=n
+                elif re.match(r"bytes[0-9]+", prop.type):
+                    splits, value = self._process_bytes(splits, prop.type)
+                    processed_splits+=1
+                else:
+                    print('Error, unsupported type {}'.format(prop.type))
+                    return None
             log_payload += [{'name': prop.name, 'type': prop.type, 'value':value}]
 
             eventlog_obj.data = log_payload

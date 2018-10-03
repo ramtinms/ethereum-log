@@ -1,7 +1,7 @@
 import sha3
 from collections import namedtuple
 
-TopicProperty = namedtuple('TopicProperty', ['name', 'type'])
+TopicProperty = namedtuple('TopicProperty', ['name', 'type', 'indexed'])
 
 class Topic:
     def __init__(self, event_name, ordered_topic_properties):
@@ -29,6 +29,6 @@ class Topic:
         name = json_obj.get('name')
         properties = []
         for inp in json_obj.get('inputs', []):
-            properties += [TopicProperty(inp.get('name'), inp.get('type'))]
+            properties += [TopicProperty(inp.get('name'), inp.get('type'), inp.get('indexed'))]
         return cls(name, properties)
 
